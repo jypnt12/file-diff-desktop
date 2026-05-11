@@ -1,0 +1,14 @@
+{
+  "name": "file-diff-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "postinstall": "node scripts/copy-monaco.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "monaco-editor": "^0.52.2"
+  }
+}

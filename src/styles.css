@@ -1,0 +1,383 @@
+:root {
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #e6e6e6;
+  background-color: #1e1e1e;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+
+button {
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid #3c3c3c;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #e6e6e6;
+  background-color: #2d2d2d;
+  white-space: nowrap;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+button:hover:not(:disabled) {
+  border-color: #5a8cff;
+  background-color: #353535;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Top toolbar ─────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid #2e2e2e;
+  background: #252526;
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c8c8c8;
+  letter-spacing: 0.01em;
+}
+
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* ── Source bar: LEFT / RIGHT panels ─────────────── */
+
+.source-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0.65rem 0.75rem;
+  gap: 0;
+  background: #1a1a1b;
+  border-bottom: 1px solid #2e2e2e;
+  flex-shrink: 0;
+}
+
+.source-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.source-panel-hdr {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.7rem;
+  padding: 0 0.1rem;
+}
+
+.side-label {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.55rem;
+  border-radius: 4px;
+}
+
+.side-left {
+  background: #0d2740;
+  color: #5aadff;
+  border: 1px solid #1a4775;
+}
+
+.side-right {
+  background: #0d2d17;
+  color: #5adb6a;
+  border: 1px solid #1a5530;
+}
+
+.source-path {
+  flex: 1;
+  font-size: 0.72rem;
+  color: #7a7a7a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Drop zones ──────────────────────────────────── */
+
+.drop-zone {
+  border: 1.5px dashed #3a3a3a;
+  border-radius: 10px;
+  background: #242425;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1rem;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  min-height: 84px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.drop-zone:hover,
+.drop-zone:focus-visible {
+  border-color: #5a8cff;
+  background: #1b2a42;
+  outline: none;
+}
+
+.drop-zone.is-dropping {
+  border-color: #5a8cff;
+  border-style: solid;
+  background: #1b2a42;
+}
+
+.drop-zone.has-file {
+  border-color: #2e6040;
+  background: #182818;
+}
+
+.drop-zone-icon {
+  color: #5a8cff;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.drop-zone.has-file .drop-zone-icon {
+  color: #5adb6a;
+  opacity: 0.8;
+}
+
+.drop-zone-primary {
+  margin: 0;
+  font-size: 0.83rem;
+  color: #c0c0c0;
+  font-weight: 500;
+}
+
+.drop-zone-secondary {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #5a5a5a;
+}
+
+.source-vs {
+  flex-shrink: 0;
+  width: 3rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #404040;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Main content ────────────────────────────────── */
+
+.main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.tree-pane {
+  width: 280px;
+  min-width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid #2e2e2e;
+  display: flex;
+  flex-direction: column;
+  background: #252526;
+}
+
+.editor-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+}
+
+.pane-title {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #808080;
+  border-bottom: 1px solid #2e2e2e;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── File tree ───────────────────────────────────── */
+
+.tree-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.25rem 0.35rem 0.5rem;
+}
+
+.tree-list,
+.tree-nested {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-nested {
+  margin-left: 0.65rem;
+  padding-left: 0.35rem;
+  border-left: 1px solid #3c3c3c;
+}
+
+.tree-item {
+  margin: 0;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.tree-row.is-dir {
+  color: #b0b0b0;
+}
+
+.tree-row.is-file {
+  cursor: pointer;
+}
+
+.tree-row.is-file:hover,
+.tree-row.is-file:focus-visible {
+  background: #2a2d2e;
+  outline: none;
+}
+
+.tree-row.is-file.is-selected {
+  background: #094771;
+  outline: 1px solid #3794ff;
+}
+
+.tree-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.tree-badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  text-transform: lowercase;
+  background: #3c3c3c;
+  color: #ccc;
+}
+
+.tree-row[data-status="onlyLeft"] .tree-badge {
+  background: #5a1e1e;
+  color: #ffb4b4;
+}
+
+.tree-row[data-status="onlyRight"] .tree-badge {
+  background: #1e4d2a;
+  color: #b4ffc8;
+}
+
+.tree-row[data-status="modified"] .tree-badge {
+  background: #5a4a1e;
+  color: #ffe9a6;
+}
+
+.tree-row[data-status="identical"] .tree-badge {
+  background: #333;
+  color: #777;
+}
+
+/* ── Diff editor ─────────────────────────────────── */
+
+#diff-container {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Status bar ──────────────────────────────────── */
+
+.status-msg {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.72rem;
+  min-height: 1.3rem;
+  color: #5a5a5a;
+  border-top: 1px solid #2e2e2e;
+  background: #252526;
+  flex-shrink: 0;
+}
+
+.status-msg.is-error {
+  color: #ff7070;
+}
