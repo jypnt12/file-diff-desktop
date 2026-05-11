@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, UNIX_EPOCH};
 
 use serde::Serialize;
 use tauri_plugin_dialog::DialogExt;
@@ -11,7 +11,7 @@ use walkdir::WalkDir;
 #[derive(Clone, Debug)]
 enum NodeKind {
     Dir,
-    File(u64),
+    File { size: u64, modified_ms: u64 },
 }
 
 fn join_rel(root: &Path, rel_key: &str) -> PathBuf {
@@ -56,7 +56,14 @@ fn collect_entries(root: &Path) -> Result<HashMap<String, NodeKind>, String> {
         if metadata.is_dir() {
             map.insert(key, NodeKind::Dir);
         } else if metadata.is_file() {
-            map.insert(key, NodeKind::File(metadata.len()));
+            let size = metadata.len();
+            let modified_ms = metadata
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+            map.insert(key, NodeKind::File { size, modified_ms });
         }
     }
     Ok(map)
@@ -75,6 +82,10 @@ pub struct DiffEntry {
     pub status: String,
     pub left_exists: bool,
     pub right_exists: bool,
+    pub left_size: Option<u64>,
+    pub right_size: Option<u64>,
+    pub left_modified_ms: Option<u64>,
+    pub right_modified_ms: Option<u64>,
 }
 
 #[tauri::command]
@@ -123,33 +134,35 @@ fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String
         let left_exists = l.is_some();
         let right_exists = r.is_some();
 
+        let (left_size, left_modified_ms) = match l {
+            Some(NodeKind::File { size, modified_ms }) => (Some(*size), Some(*modified_ms)),
+            _ => (None, None),
+        };
+        let (right_size, right_modified_ms) = match r {
+            Some(NodeKind::File { size, modified_ms }) => (Some(*size), Some(*modified_ms)),
+            _ => (None, None),
+        };
+
         let (kind_str, status) = match (l, r) {
             (Some(NodeKind::Dir), Some(NodeKind::Dir)) => ("dir", "identical"),
-            (Some(NodeKind::File(ls)), Some(NodeKind::File(rs))) => {
+            (Some(NodeKind::File { size: ls, .. }), Some(NodeKind::File { size: rs, .. })) => {
                 if ls != rs {
                     ("file", "modified")
                 } else {
-                    let left_path = join_rel(&left_root, &key);
-                    let right_path = join_rel(&right_root, &key);
-                    let hl = file_hash(&left_path)?;
-                    let hr = file_hash(&right_path)?;
-                    if hl == hr {
-                        ("file", "identical")
-                    } else {
-                        ("file", "modified")
-                    }
+                    let lp = join_rel(&left_root, &key);
+                    let rp = join_rel(&right_root, &key);
+                    let hl = file_hash(&lp)?;
+                    let hr = file_hash(&rp)?;
+                    if hl == hr { ("file", "identical") } else { ("file", "modified") }
                 }
             }
-            (Some(NodeKind::Dir), Some(NodeKind::File(_)))
-            | (Some(NodeKind::File(_)), Some(NodeKind::Dir)) => {
-                // type mismatch at same relative path
-                ("file", "modified")
-            }
-            (Some(NodeKind::Dir), None) => ("dir", "onlyLeft"),
-            (Some(NodeKind::File(_)), None) => ("file", "onlyLeft"),
-            (None, Some(NodeKind::Dir)) => ("dir", "onlyRight"),
-            (None, Some(NodeKind::File(_))) => ("file", "onlyRight"),
-            (None, None) => unreachable!("union key always exists on at least one side"),
+            (Some(NodeKind::Dir), Some(NodeKind::File { .. }))
+            | (Some(NodeKind::File { .. }), Some(NodeKind::Dir)) => ("file", "modified"),
+            (Some(NodeKind::Dir), None)         => ("dir",  "onlyLeft"),
+            (Some(NodeKind::File { .. }), None) => ("file", "onlyLeft"),
+            (None, Some(NodeKind::Dir))         => ("dir",  "onlyRight"),
+            (None, Some(NodeKind::File { .. })) => ("file", "onlyRight"),
+            (None, None) => unreachable!(),
         };
 
         out.push(DiffEntry {
@@ -158,6 +171,10 @@ fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String
             status: status.to_string(),
             left_exists,
             right_exists,
+            left_size,
+            right_size,
+            left_modified_ms,
+            right_modified_ms,
         });
     }
     Ok(out)
@@ -166,12 +183,8 @@ fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String
 #[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
     let p = PathBuf::from(&path);
-    if !p.exists() {
-        return Ok(String::new());
-    }
-    if p.is_dir() {
-        return Ok(String::new());
-    }
+    if !p.exists() { return Ok(String::new()); }
+    if p.is_dir()  { return Ok(String::new()); }
     fs::read_to_string(&p).map_err(|e| format!("read {}: {e}", p.display()))
 }
 
