@@ -581,17 +581,33 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   background: rgba(255, 100, 100, 0.12);
 }
 
-/* Monaco diff line highlights (whole-line, translucent) */
-.monaco-editor .diff-line-changed {
+/* Monaco diff line highlights (whole-line + inline). Target .cdr nodes inside diff editor
+   so backgrounds win over Monaco defaults (Monaco 0.52+). */
+.monaco-diff-editor .monaco-editor .lines-content .cdr.diff-line-changed,
+.monaco-diff-editor .monaco-editor .diff-line-changed {
   background: rgba(220, 70, 70, 0.22) !important;
 }
-.monaco-editor .diff-line-ws {
+.monaco-diff-editor .monaco-editor .lines-content .cdr.diff-line-ws,
+.monaco-diff-editor .monaco-editor .diff-line-ws {
   background: rgba(80, 140, 255, 0.22) !important;
 }
 
-.monaco-editor .diff-ch-inline-important {
+.monaco-diff-editor .monaco-editor .mtk1.diff-ch-inline-important,
+.monaco-diff-editor .monaco-editor .diff-ch-inline-important {
   background: rgba(255, 90, 90, 0.35) !important;
   border-radius: 2px;
+}
+
+/* Alignment gaps (empty rows on shorter side) — view-only, never in model / saved file */
+.monaco-diff-editor .monaco-editor .view-zones > div,
+.monaco-diff-editor .monaco-editor .margin-view-overlays .diagonal-fill,
+.monaco-diff-editor .monaco-editor .view-overlays .diagonal-fill {
+  background-color: transparent !important;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(160, 160, 160, 0.08) 0 5px,
+    rgba(160, 160, 160, 0.16) 5px 6px
+  ) !important;
 }
 
 /* ── File diff tab: header ───────────────────────────────────────────── */

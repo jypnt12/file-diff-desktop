@@ -26,7 +26,10 @@ export function applyDiffLineHighlights(diffEditor, origColl, modColl) {
   const mod = diffEditor.getModifiedEditor();
   const origModel = orig.getModel();
   const modModel = mod.getModel();
-  const changes = diffEditor.getLineChanges() ?? [];
+  // Monaco 0.52+: diff is async; `null` means computation not ready yet — skip so we don't
+  // wipe decorations before `onDidUpdateDiff` / deferred runs (avoids missing red/blue).
+  const changes = diffEditor.getLineChanges();
+  if (changes === null) return;
 
   /** @type {import("monaco-editor").editor.IModelDeltaDecoration[]} */
   const origDecs = [];
@@ -114,9 +117,17 @@ export function setupDiffLineHighlights(tabId, editor) {
     }
   };
 
+  /** Run after layout/diff pipeline so `getLineChanges()` is non-null (missed if only sync `run()`). */
+  const scheduleDeferredRun = () => {
+    queueMicrotask(() => {
+      requestAnimationFrame(run);
+    });
+  };
+
   /** @type {{ dispose: () => void }[]} */
   const disposables = [];
   disposables.push(editor.onDidUpdateDiff(() => run()));
+  disposables.push(editor.onDidChangeModel(() => scheduleDeferredRun()));
 
   const origModel = orig.getModel();
   const modModel = mod.getModel();
@@ -140,6 +151,7 @@ export function setupDiffLineHighlights(tabId, editor) {
 
   data.diffHighlightDisposables = disposables;
   run();
+  scheduleDeferredRun();
 }
 
 /** @param {any} data */
