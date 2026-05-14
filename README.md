@@ -4,6 +4,8 @@ Beyond Compare–style folder and file diff: pick two folders, browse difference
 
 ## Run
 
+Use **Node 24** (see [`.nvmrc`](./.nvmrc)) so `@tauri-apps/cli` installs the correct native binding for your machine. With [nvm](https://github.com/nvm-sh/nvm): `nvm use`.
+
 ```sh
 npm install   # also vendors Monaco into src/vendor/monaco/ (gitignored)
 npm run tauri dev

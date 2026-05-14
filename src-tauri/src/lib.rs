@@ -112,6 +112,29 @@ async fn pick_folder(app: tauri::AppHandle) -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
+async fn pick_file(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let (tx, rx) = oneshot::channel();
+    app.dialog()
+        .file()
+        .set_title("Select file")
+        .pick_file(move |picked| {
+            let _ = tx.send(picked);
+        });
+
+    let picked = tokio::time::timeout(Duration::from_secs(120), rx)
+        .await
+        .map_err(|_| "File picker timed out".to_string())?;
+    let picked = picked.map_err(|_| "File picker closed unexpectedly".to_string())?;
+    match picked {
+        None => Ok(None),
+        Some(fp) => {
+            let pb = fp.into_path().map_err(|e| e.to_string())?;
+            Ok(Some(pb.to_string_lossy().into_owned()))
+        }
+    }
+}
+
+#[tauri::command]
 fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String> {
     let left_root = PathBuf::from(&left);
     let right_root = PathBuf::from(&right);
@@ -153,14 +176,18 @@ fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String
                     let rp = join_rel(&right_root, &key);
                     let hl = file_hash(&lp)?;
                     let hr = file_hash(&rp)?;
-                    if hl == hr { ("file", "identical") } else { ("file", "modified") }
+                    if hl == hr {
+                        ("file", "identical")
+                    } else {
+                        ("file", "modified")
+                    }
                 }
             }
             (Some(NodeKind::Dir), Some(NodeKind::File { .. }))
             | (Some(NodeKind::File { .. }), Some(NodeKind::Dir)) => ("file", "modified"),
-            (Some(NodeKind::Dir), None)         => ("dir",  "onlyLeft"),
+            (Some(NodeKind::Dir), None) => ("dir", "onlyLeft"),
             (Some(NodeKind::File { .. }), None) => ("file", "onlyLeft"),
-            (None, Some(NodeKind::Dir))         => ("dir",  "onlyRight"),
+            (None, Some(NodeKind::Dir)) => ("dir", "onlyRight"),
             (None, Some(NodeKind::File { .. })) => ("file", "onlyRight"),
             (None, None) => unreachable!(),
         };
@@ -181,10 +208,57 @@ fn compare_folders(left: String, right: String) -> Result<Vec<DiffEntry>, String
 }
 
 #[tauri::command]
+fn list_folder(root: String, side: String) -> Result<Vec<DiffEntry>, String> {
+    let root = PathBuf::from(&root);
+    let map = collect_entries(&root)?;
+    let is_left = side == "left";
+
+    let mut keys: Vec<String> = map.keys().cloned().collect();
+    keys.sort();
+
+    let mut out = Vec::with_capacity(keys.len());
+    for key in keys {
+        let node = map
+            .get(&key)
+            .ok_or_else(|| format!("Missing collected entry: {key}"))?;
+        let (kind_str, size, modified_ms) = match node {
+            NodeKind::Dir => ("dir", None, None),
+            NodeKind::File { size, modified_ms } => ("file", Some(*size), Some(*modified_ms)),
+        };
+
+        out.push(DiffEntry {
+            rel_path: key,
+            kind: kind_str.to_string(),
+            status: if is_left { "onlyLeft" } else { "onlyRight" }.to_string(),
+            left_exists: is_left,
+            right_exists: !is_left,
+            left_size: if is_left { size } else { None },
+            right_size: if is_left { None } else { size },
+            left_modified_ms: if is_left { modified_ms } else { None },
+            right_modified_ms: if is_left { None } else { modified_ms },
+        });
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+fn path_is_directory(path: String) -> Result<bool, String> {
+    let p = PathBuf::from(path.trim());
+    if !p.exists() {
+        return Err(format!("Path does not exist: {}", p.display()));
+    }
+    Ok(p.is_dir())
+}
+
+#[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
     let p = PathBuf::from(&path);
-    if !p.exists() { return Ok(String::new()); }
-    if p.is_dir()  { return Ok(String::new()); }
+    if !p.exists() {
+        return Ok(String::new());
+    }
+    if p.is_dir() {
+        return Ok(String::new());
+    }
     fs::read_to_string(&p).map_err(|e| format!("read {}: {e}", p.display()))
 }
 
@@ -204,7 +278,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             pick_folder,
+            pick_file,
             compare_folders,
+            list_folder,
+            path_is_directory,
             read_file,
             write_file
         ])
