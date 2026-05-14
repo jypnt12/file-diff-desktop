@@ -101,9 +101,10 @@ export function applyDiffLineHighlights(diffEditor, origColl, modColl) {
  * @param {import("monaco-editor").editor.IStandaloneDiffEditor} editor
  */
 export function setupDiffLineHighlights(tabId, editor) {
+  console.log("setupDiffLineHighlights called", tabId);
   const data = state.tabMap.get(tabId);
   if (!data) return;
-
+  console.log("with data", data);
   disposeTabDiffHighlights(data);
 
   const orig = editor.getOriginalEditor();

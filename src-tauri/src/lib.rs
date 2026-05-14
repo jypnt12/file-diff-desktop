@@ -8,6 +8,8 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::sync::oneshot;
 use walkdir::WalkDir;
 
+use tauri::Manager;
+
 #[derive(Clone, Debug)]
 enum NodeKind {
     Dir,
@@ -271,11 +273,21 @@ fn write_file(path: String, contents: String) -> Result<(), String> {
     fs::write(&p, contents.as_bytes()).map_err(|e| format!("write {}: {e}", p.display()))
 }
 
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             pick_folder,
             pick_file,
