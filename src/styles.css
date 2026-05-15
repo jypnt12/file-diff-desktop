@@ -284,6 +284,77 @@ button:disabled {
 	display: flex;
 }
 
+/* Folder compare root — positioning for half-drop overlays */
+#panel-folder {
+	position: relative;
+}
+
+/* Half-panel drop overlays (one side loaded, other empty) */
+.fc-half-drop {
+	position: absolute;
+	top: 38px;
+	bottom: 0;
+	width: 50%;
+	z-index: 15;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 1rem;
+	border: 1.5px dashed #363636;
+	border-radius: 10px;
+	background: rgba(30, 30, 30, 0.88);
+	cursor: pointer;
+	user-select: none;
+	text-align: center;
+	min-width: 0;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+#fc-half-drop-left {
+	left: 0;
+}
+
+#fc-half-drop-right {
+	right: 0;
+	left: auto;
+}
+
+.fc-half-drop:hover,
+.fc-half-drop:focus-visible {
+	border-color: #5a8cff;
+	background: rgba(27, 42, 66, 0.92);
+	outline: none;
+}
+
+.fc-half-drop.is-drop-target {
+	border-color: #5a8cff;
+	border-style: solid;
+	background: rgba(27, 42, 66, 0.95);
+	box-shadow: 0 0 0 1px rgba(90, 140, 255, 0.35);
+}
+
+.fc-half-drop.has-file {
+	border-color: #2e6040;
+	background: rgba(24, 40, 24, 0.92);
+}
+
+.fc-half-drop.has-folder {
+	border-color: #4a6a9e;
+	background: rgba(26, 34, 48, 0.92);
+}
+
+.fc-half-drop.has-folder .drop-zone-icon {
+	color: #7eb0ff;
+	opacity: 0.75;
+}
+
+.fc-half-drop.has-file .drop-zone-icon {
+	color: #5adb6a;
+	opacity: 0.8;
+}
+
 /* Folder compare panel: native drag-drop target tint (Tauri) */
 #panel-folder.is-drop-target-left::before,
 #panel-folder.is-drop-target-right::before {

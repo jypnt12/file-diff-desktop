@@ -1,4 +1,5 @@
-import { dropLeftEl, dropRightEl, statusEl } from "../dom.js";
+import { dropLeftEl, dropRightEl, halfDropLeftEl, halfDropRightEl, statusEl } from "../dom.js";
+import { alertModal, confirmModal } from "../ui/modal.js";
 import { refreshSideDirtyDecorations } from "../monaco/diff.js";
 import { getDisplayTextsForPrefs, loadDiffPrefs } from "../storage/diffPrefs.js";
 import { state } from "../state.js";
@@ -77,17 +78,22 @@ export async function saveDirtyTabsBeforeReset(dirtyTabs) {
         return sides.some((side) => !getTabSidePath(tabId, data, side));
     });
     if (unsavable.length) {
-        window.alert(
-            "Some tabs have unsaved changes but no file path to save to:\n\n" +
-            unsavable.map(({ title }) => `- ${title}`).join("\n") +
-            "\n\nSave or close those changes manually before resetting.",
-        );
+        await alertModal({
+            title: "Cannot save",
+            message:
+                "Some tabs have unsaved changes but no file path to save to:\n\n" +
+                unsavable.map(({ title }) => `- ${title}`).join("\n") +
+                "\n\nSave or close those changes manually before resetting.",
+        });
         return false;
     }
 
-    const okToSave = window.confirm(
-        "There are unsaved changes. Save them before resetting?",
-    );
+    const okToSave = await confirmModal({
+        title: "Save changes?",
+        message: "There are unsaved changes. Save them before resetting?",
+        primaryLabel: "Save",
+        secondaryLabel: "Cancel",
+    });
     if (!okToSave) return false;
 
     try {
@@ -99,7 +105,10 @@ export async function saveDirtyTabsBeforeReset(dirtyTabs) {
         return true;
     } catch (err) {
         setStatus(statusEl, String(err), true);
-        window.alert(`Could not save changes:\n\n${String(err)}`);
+        await alertModal({
+            title: "Save failed",
+            message: `Could not save changes:\n\n${String(err)}`,
+        });
         return false;
     } finally {
         setBusy(false);
@@ -120,7 +129,12 @@ export async function resetApplicationToStart() {
         return;
     }
 
-    const confirmed = window.confirm("Close all open tabs and reset the app to the starting screen?");
+    const confirmed = await confirmModal({
+        title: "Reset app?",
+        message: "Close all open tabs and reset the app to the starting screen?",
+        primaryLabel: "Reset",
+        secondaryLabel: "Cancel",
+    });
     if (!confirmed) return;
 
     const dirtyTabs = getDirtyTabs();
@@ -133,8 +147,10 @@ export async function resetApplicationToStart() {
     state.collapsedDirs.clear();
     state.droppedFiles.left = null;
     state.droppedFiles.right = null;
-    dropLeftEl.classList.remove("has-file", "has-folder", "is-dropping");
-    dropRightEl.classList.remove("has-file", "has-folder", "is-dropping");
+    dropLeftEl.classList.remove("has-file", "has-folder", "is-dropping", "is-drop-target");
+    dropRightEl.classList.remove("has-file", "has-folder", "is-dropping", "is-drop-target");
+    halfDropLeftEl?.classList.remove("has-file", "has-folder", "is-dropping", "is-drop-target");
+    halfDropRightEl?.classList.remove("has-file", "has-folder", "is-dropping", "is-drop-target");
     updatePathLabels();
     renderFolderCompare();
     activateTab("folder");

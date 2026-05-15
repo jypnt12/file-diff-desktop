@@ -24,3 +24,5 @@ export const btnRecentEl = document.getElementById("btn-recent");
 export const recentPopoverEl = document.getElementById("recent-popover");
 export const fcRecentsEl = document.getElementById("fc-recents");
 export const panelFolderEl = document.getElementById("panel-folder");
+export const halfDropLeftEl = document.getElementById("fc-half-drop-left");
+export const halfDropRightEl = document.getElementById("fc-half-drop-right");
