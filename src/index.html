@@ -1,163 +1,174 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Diff Desktop</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script src="vendor/monaco/vs/loader.js"></script>
-    <script>
-      (function () {
-        var vs = new URL("vendor/monaco/vs", document.baseURI).href.replace(/\/$/, "");
-        require.config({ paths: { vs: vs } });
-        require(["vs/editor/editor.main"], function () {
-          window.__monacoLoaded = true;
-        });
-      })();
-    </script>
-    <script type="module" src="main.js"></script>
-  </head>
-  <body>
 
-    <!-- ── Top toolbar ──────────────────────────────── -->
-    <header class="toolbar">
-      <button type="button" id="btn-home" class="toolbar-icon-btn" title="Reset to starting screen">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-        </svg>
-        <span>Reset</span>
-      </button>
-      <button type="button" id="btn-refresh" class="toolbar-icon-btn" title="Refresh / Reload">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-      </button>
-      <div class="toolbar-recent-wrap">
-        <button type="button" id="btn-recent" class="toolbar-icon-btn" title="Recent compares" aria-expanded="false" aria-haspopup="true">
-          Recent <span class="toolbar-caret" aria-hidden="true">▾</span>
-        </button>
-        <div id="recent-popover" class="recent-popover hidden" role="menu" aria-label="Recent compares"></div>
-      </div>
-      <div class="toolbar-sep"></div>
-      <button type="button" id="btn-save-left" title="Save Left file">Save Left</button>
-      <button type="button" id="btn-save-right" title="Save Right file">Save Right</button>
-      <button type="button" id="btn-save-all" title="Save all changes">Save All</button>
-      <button type="button" id="btn-compare-files" title="Pick two files to compare (no folders required)">Compare files…</button>
-    </header>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>File Diff Desktop</title>
+	<link rel="stylesheet" href="styles.css" />
+	<script src="vendor/monaco/vs/loader.js"></script>
+	<script>
+		(function () {
+			var vs = new URL("vendor/monaco/vs", document.baseURI).href.replace(/\/$/, "");
+			require.config({ paths: { vs: vs } });
+			require(["vs/editor/editor.main"], function () {
+				window.__monacoLoaded = true;
+			});
+		})();
+	</script>
+	<script type="module" src="main.js"></script>
+</head>
 
-    <!-- ── Tab bar ──────────────────────────────────── -->
-    <div class="tab-bar" id="tab-bar">
-      <button class="tab is-active" id="tab-btn-folder" data-tab-id="folder">
-        <svg width="12" height="12" viewBox="0 0 16 14" fill="currentColor" aria-hidden="true">
-          <path d="M0 2.5A1.5 1.5 0 0 1 1.5 1h4.086a1.5 1.5 0 0 1 1.06.44L7.707 2.5H14.5A1.5 1.5 0 0 1 16 4v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-10z"/>
-        </svg>
-        <span class="tab-title">Folder Compare</span>
-      </button>
-    </div>
+<body>
 
-    <!-- ── Tab panels ───────────────────────────────── -->
-    <div class="tab-panels" id="tab-panels">
+	<!-- ── Top toolbar ──────────────────────────────── -->
+	<header class="toolbar">
+		<button type="button" id="btn-home" class="toolbar-icon-btn" title="Reset to starting screen">
+			<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+			</svg>
+			<span>Reset</span>
+		</button>
+		<button type="button" id="btn-refresh" class="toolbar-icon-btn" title="Refresh / Reload">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+				stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<polyline points="23 4 23 10 17 10" />
+				<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+			</svg>
+		</button>
+		<div class="toolbar-recent-wrap">
+			<button type="button" id="btn-recent" class="toolbar-icon-btn" title="Recent compares" aria-expanded="false"
+				aria-haspopup="true">
+				Recent <span class="toolbar-caret" aria-hidden="true">▾</span>
+			</button>
+			<div id="recent-popover" class="recent-popover hidden" role="menu" aria-label="Recent compares"></div>
+		</div>
+		<div class="toolbar-sep"></div>
+		<button type="button" id="btn-save-left" title="Save Left file">Save Left</button>
+		<button type="button" id="btn-save-right" title="Save Right file">Save Right</button>
+		<button type="button" id="btn-save-all" title="Save all changes">Save All</button>
+		<button type="button" id="btn-compare-files" title="Pick two files to compare (no folders required)">Compare
+			files…</button>
+	</header>
 
-      <!-- Folder compare panel (always present) -->
-      <div class="tab-panel is-active" id="panel-folder">
+	<!-- ── Tab bar ──────────────────────────────────── -->
+	<div class="tab-bar" id="tab-bar">
+		<button class="tab is-active" id="tab-btn-folder" data-tab-id="folder">
+			<svg width="12" height="12" viewBox="0 0 16 14" fill="currentColor" aria-hidden="true">
+				<path
+					d="M0 2.5A1.5 1.5 0 0 1 1.5 1h4.086a1.5 1.5 0 0 1 1.06.44L7.707 2.5H14.5A1.5 1.5 0 0 1 16 4v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5v-10z" />
+			</svg>
+			<span class="tab-title">Folder Compare</span>
+		</button>
+	</div>
 
-        <!-- Path / pick-folder bar -->
-        <div class="fc-pathbar">
-          <div class="fc-pathbar-side" data-side="left">
-            <span class="side-label side-left">LEFT</span>
-            <span id="path-left" class="fc-path-text" title=""></span>
-            <button type="button" id="btn-pick-left">Pick Folder</button>
-          </div>
-          <div class="fc-pathbar-divider"></div>
-          <div class="fc-pathbar-side" data-side="right">
-            <span class="side-label side-right">RIGHT</span>
-            <span id="path-right" class="fc-path-text" title=""></span>
-            <button type="button" id="btn-pick-right">Pick Folder</button>
-          </div>
-        </div>
+	<!-- ── Tab panels ───────────────────────────────── -->
+	<div class="tab-panels" id="tab-panels">
 
-        <!-- Empty / drop state (shown when no folders picked) -->
-        <div class="fc-empty" id="fc-empty">
-          <div class="fc-drop-row">
-            <div
-              class="drop-zone"
-              id="drop-left"
-              data-side="left"
-              tabindex="0"
-              role="button"
-              aria-label="Left — drag and drop a file or folder here, or click to browse"
-            >
-              <svg class="drop-zone-icon" width="36" height="36" viewBox="0 0 24 24"
-                   fill="none" stroke="currentColor" stroke-width="1.5"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"/>
-                <polyline points="16 6 12 2 8 6"/>
-                <line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              <p class="drop-zone-label">LEFT</p>
-              <p class="drop-zone-primary">Drag &amp; drop a file or folder</p>
-              <p class="drop-zone-secondary">or click to browse</p>
-            </div>
+		<!-- Folder compare panel (always present) -->
+		<div class="tab-panel is-active" id="panel-folder">
 
-            <div class="fc-drop-vs">vs</div>
+			<!-- Path / pick-folder bar -->
+			<div class="fc-pathbar">
+				<div class="fc-pathbar-side" data-side="left">
+					<span class="side-label side-left">LEFT</span>
+					<span id="path-left" class="fc-path-text" title=""></span>
+					<button type="button" id="btn-pick-left">Pick Folder</button>
+				</div>
+				<div class="fc-pathbar-divider"></div>
+				<div class="fc-pathbar-side" data-side="right">
+					<span class="side-label side-right">RIGHT</span>
+					<span id="path-right" class="fc-path-text" title=""></span>
+					<button type="button" id="btn-pick-right">Pick Folder</button>
+				</div>
+			</div>
 
-            <div
-              class="drop-zone"
-              id="drop-right"
-              data-side="right"
-              tabindex="0"
-              role="button"
-              aria-label="Right — drag and drop a file or folder here, or click to browse"
-            >
-              <svg class="drop-zone-icon" width="36" height="36" viewBox="0 0 24 24"
-                   fill="none" stroke="currentColor" stroke-width="1.5"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"/>
-                <polyline points="16 6 12 2 8 6"/>
-                <line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              <p class="drop-zone-label">RIGHT</p>
-              <p class="drop-zone-primary">Drag &amp; drop a file or folder</p>
-              <p class="drop-zone-secondary">or click to browse</p>
-            </div>
-          </div>
-          <section id="fc-recents" class="fc-recents hidden" aria-label="Recent compares"></section>
-        </div>
+			<!-- Empty / drop state (shown when no folders picked) -->
+			<div class="fc-empty" id="fc-empty">
+				<div class="fc-drop-row">
+					<div class="drop-zone" id="drop-left" data-side="left" tabindex="0" role="button"
+						aria-label="Left — drag and drop a file or folder here, or click to browse">
+						<svg class="drop-zone-icon" width="36" height="36" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+							aria-hidden="true">
+							<path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1" />
+							<polyline points="16 6 12 2 8 6" />
+							<line x1="12" y1="2" x2="12" y2="15" />
+						</svg>
+						<p class="drop-zone-label">LEFT</p>
+						<p class="drop-zone-primary">Drag &amp; drop a file or folder</p>
+						<p class="drop-zone-secondary">or click to browse</p>
+					</div>
 
-        <!-- Folder compare table (shown when both folders are picked) -->
-        <div class="fc-table hidden" id="fc-table">
-          <p id="fc-file-diff-hint" class="fc-file-diff-hint hidden" role="note">
-            Click a file name in the list below to open a side-by-side text diff of its contents.
-          </p>
-          <div class="fc-body" id="fc-body">
-            <!-- Sticky column header row -->
-            <div class="fc-col-header">
-              <div class="fc-side">
-                <span class="fcc-name">Name</span>
-                <span class="fcc-size">Size</span>
-                <span class="fcc-date">Modified</span>
-              </div>
-              <div class="fc-gutter-h"></div>
-              <div class="fc-side">
-                <span class="fcc-name">Name</span>
-                <span class="fcc-size">Size</span>
-                <span class="fcc-date">Modified</span>
-              </div>
-            </div>
-            <!-- rows injected by JS -->
-          </div>
-        </div>
+					<div class="fc-drop-vs">vs</div>
 
-      </div>
-      <!-- dynamic file diff panels are appended here by JS -->
-    </div>
+					<div class="drop-zone" id="drop-right" data-side="right" tabindex="0" role="button"
+						aria-label="Right — drag and drop a file or folder here, or click to browse">
+						<svg class="drop-zone-icon" width="36" height="36" viewBox="0 0 24 24" fill="none"
+							stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+							aria-hidden="true">
+							<path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1" />
+							<polyline points="16 6 12 2 8 6" />
+							<line x1="12" y1="2" x2="12" y2="15" />
+						</svg>
+						<p class="drop-zone-label">RIGHT</p>
+						<p class="drop-zone-primary">Drag &amp; drop a file or folder</p>
+						<p class="drop-zone-secondary">or click to browse</p>
+					</div>
+				</div>
+				<section id="fc-recents" class="fc-recents hidden" aria-label="Recent compares"></section>
+			</div>
 
-    <!-- ── Status bar ──────────────────────────────── -->
-    <p id="status-msg" class="status-msg" aria-live="polite"></p>
+			<!-- Folder compare table (shown when both folders are picked) -->
+			<div class="fc-table hidden" id="fc-table">
+				<p id="fc-file-diff-hint" class="fc-file-diff-hint hidden" role="note">
+					Click a file name in the list below to open a side-by-side text diff of its contents.
+				</p>
+				<div class="fc-body" id="fc-body">
+					<!-- Sticky column header row -->
+					<div class="fc-col-header">
+						<div class="fc-side">
+							<span class="fcc-name">Name</span>
+							<span class="fcc-size">Size</span>
+							<span class="fcc-date">Modified</span>
+						</div>
+						<div class="fc-gutter-h"></div>
+						<div class="fc-side">
+							<span class="fcc-name">Name</span>
+							<span class="fcc-size">Size</span>
+							<span class="fcc-date">Modified</span>
+						</div>
+					</div>
+					<!-- rows injected by JS -->
+				</div>
+			</div>
 
-    <input id="input-left-file"  type="file" hidden />
-    <input id="input-right-file" type="file" hidden />
-  </body>
+		</div>
+		<!-- dynamic file diff panels are appended here by JS -->
+	</div>
+
+	<!-- ── Status bar ──────────────────────────────── -->
+	<p id="status-msg" class="status-msg" aria-live="polite"></p>
+
+	<input id="input-left-file" type="file" hidden />
+	<input id="input-right-file" type="file" hidden />
+
+	<div id="unsaved-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+		aria-labelledby="unsaved-modal-title">
+		<div class="modal-box">
+			<h3 id="unsaved-modal-title" class="modal-title">Unsaved changes</h3>
+			<p id="unsaved-modal-body" class="modal-body"></p>
+			<div class="modal-actions">
+				<button type="button" id="unsaved-modal-save" class="modal-btn modal-btn--primary">
+					Save &amp; close
+				</button>
+				<button type="button" id="unsaved-modal-discard" class="modal-btn modal-btn--danger">
+					Close anyway
+				</button>
+				<button type="button" id="unsaved-modal-cancel" class="modal-btn">Cancel</button>
+			</div>
+		</div>
+	</div>
+</body>
+
 </html>

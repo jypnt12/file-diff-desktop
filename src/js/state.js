@@ -26,20 +26,22 @@ import { panelFolderEl } from "./dom.js";
  *   diffHighlightDisposables?: { dispose: () => void }[],
  *   origDecorCollection?: { set: (d: unknown[]) => void, clear: () => void },
  *   modDecorCollection?: { set: (d: unknown[]) => void, clear: () => void },
+ *   origDirtyDecorCollection?: { set: (d: unknown[]) => void, clear: () => void },
+ *   modDirtyDecorCollection?: { set: (d: unknown[]) => void, clear: () => void },
  * }>}
  */
 export const state = {
-  /** @type {string|null} */
-  leftRoot: null,
-  /** @type {string|null} */
-  rightRoot: null,
-  /** @type {DiffEntry[]} */
-  entries: [],
-  droppedFiles: { left: null, right: null },
-  collapsedDirs: /** @type {Set<string>} */ (new Set()),
-  tabMap: new Map(),
-  tabPanels: new Map(),
-  activeTabId: "folder",
+    /** @type {string|null} */
+    leftRoot: null,
+    /** @type {string|null} */
+    rightRoot: null,
+    /** @type {DiffEntry[]} */
+    entries: [],
+    droppedFiles: { left: null, right: null },
+    collapsedDirs: /** @type {Set<string>} */ (new Set()),
+    tabMap: new Map(),
+    tabPanels: new Map(),
+    activeTabId: "folder",
 };
 
 state.tabMap.set("folder", { type: "folder", title: "Folder Compare" });

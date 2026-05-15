@@ -9,7 +9,87 @@ import {
     ensureFddDiffTheme,
     setupDiffLineHighlights,
 } from "../monaco/diff.js";
-import { saveTabSide } from "./save.js";
+import { getDirtySides, getTabSidePath, saveTabSide, saveTabSides } from "./save.js";
+
+/**
+ * @param {string} tabId
+ * @param {("left"|"right")[]} dirtySides
+ * @param {string} title
+ * @returns {Promise<"save"|"discard"|"cancel">}
+ */
+function showUnsavedCloseModal(tabId, dirtySides, title) {
+    return new Promise((resolve) => {
+        const backdrop = document.getElementById("unsaved-modal");
+        const body = document.getElementById("unsaved-modal-body");
+        const btnSave = document.getElementById("unsaved-modal-save");
+        const btnDiscard = document.getElementById("unsaved-modal-discard");
+        const btnCancel = document.getElementById("unsaved-modal-cancel");
+        if (!backdrop || !body || !btnSave || !btnDiscard || !btnCancel) {
+            resolve("cancel");
+            return;
+        }
+
+        const data = state.tabMap.get(tabId);
+        const canSave =
+            !loadDiffPrefs().ignoreCase &&
+            dirtySides.every((s) => Boolean(getTabSidePath(tabId, data, s)));
+
+        const sideWords = dirtySides.map((s) => (s === "left" ? "left" : "right"));
+        const sideLabel = sideWords.length === 2 ? `${sideWords[0]} and ${sideWords[1]}` : sideWords[0];
+        body.textContent =
+            `“${title}” has unsaved changes on the ${sideLabel} side${dirtySides.length > 1 ? "s" : ""}. What would you like to do?`;
+
+        btnSave.classList.toggle("hidden", !canSave);
+
+        /** @type {(ev: KeyboardEvent) => void} */
+        let onKey;
+
+        const clean = () => {
+            backdrop.classList.add("hidden");
+            btnSave.onclick = null;
+            btnDiscard.onclick = null;
+            btnCancel.onclick = null;
+            backdrop.onclick = null;
+            if (onKey) window.removeEventListener("keydown", onKey);
+        };
+
+        const pick = /** @param {"save"|"discard"|"cancel"} */ (v) => {
+            clean();
+            resolve(v);
+        };
+
+        btnSave.onclick = () => pick("save");
+        btnDiscard.onclick = () => pick("discard");
+        btnCancel.onclick = () => pick("cancel");
+        backdrop.onclick = (ev) => {
+            if (ev.target === backdrop) pick("cancel");
+        };
+
+        onKey = (ev) => {
+            if (ev.key === "Escape") pick("cancel");
+        };
+        window.addEventListener("keydown", onKey);
+
+        backdrop.classList.remove("hidden");
+    });
+}
+
+function forceCloseTab(id) {
+    if (id === "folder") return;
+    const data = state.tabMap.get(id);
+    disposeTabDiffHighlights(data);
+    if (data?.editor) {
+        data.editor.setModel(null);
+        data.origModel?.dispose();
+        data.modModel?.dispose();
+        data.editor.dispose();
+    }
+    state.tabMap.delete(id);
+    tabBarEl.querySelector(`[data-tab-id="${CSS.escape(id)}"]`)?.remove();
+    state.tabPanels.get(id)?.remove();
+    state.tabPanels.delete(id);
+    if (state.activeTabId === id) activateTab("folder");
+}
 
 export function activateTab(id) {
     if (!state.tabMap.has(id)) return;
@@ -32,25 +112,31 @@ export function activateTab(id) {
     }
 }
 
-export function closeTab(id) {
+export async function closeTab(id, opts = {}) {
     if (id === "folder") return;
-    const data = state.tabMap.get(id);
-    disposeTabDiffHighlights(data);
-    if (data?.editor) {
-        data.origModel?.dispose();
-        data.modModel?.dispose();
-        data.editor.dispose();
+    if (!opts.skipUnsavedModal) {
+        const dirtySides = getDirtySides(id);
+        if (dirtySides.length) {
+            const data = state.tabMap.get(id);
+            const title = data?.title ?? "Untitled";
+            const choice = await showUnsavedCloseModal(id, dirtySides, title);
+            if (choice === "cancel") return;
+            if (choice === "save") {
+                try {
+                    await saveTabSides(id, dirtySides);
+                } catch (err) {
+                    setStatus(statusEl, String(err), true);
+                    return;
+                }
+            }
+        }
     }
-    state.tabMap.delete(id);
-    tabBarEl.querySelector(`[data-tab-id="${CSS.escape(id)}"]`)?.remove();
-    state.tabPanels.get(id)?.remove();
-    state.tabPanels.delete(id);
-    if (state.activeTabId === id) activateTab("folder");
+    forceCloseTab(id);
 }
 
 export function closeAllFileTabs() {
     for (const id of [...state.tabMap.keys()]) {
-        if (id !== "folder") closeTab(id);
+        if (id !== "folder") forceCloseTab(id);
     }
 }
 
@@ -137,7 +223,10 @@ function _createDiffTab(tabId, displayTitle, _status, buildHeader) {
     closeBtn.className = "tab-close";
     closeBtn.textContent = "×";
     closeBtn.title = "Close tab";
-    closeBtn.addEventListener("click", (e) => { e.stopPropagation(); closeTab(tabId); });
+    closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        void closeTab(tabId);
+    });
 
     btn.appendChild(titleSpan);
     btn.appendChild(closeBtn);
@@ -300,7 +389,7 @@ export function rebuildTabDiffModels(tabId) {
     disposeTabDiffHighlights(data);
 
     const editor = data.editor;
-    editor.setModel({ original: null, modified: null });
+    editor.setModel(null);
     data.origModel?.dispose();
     data.modModel?.dispose();
 
@@ -321,8 +410,8 @@ export function rebuildTabDiffModels(tabId) {
         readOnly,
         originalEditable: !readOnly,
         glyphMargin: true,
-        renderMarginRevertIcon: true,
-        renderGutterMenu: true,
+        renderMarginRevertIcon: false,
+        renderGutterMenu: false,
         diffAlgorithm: "advanced",
     });
 
@@ -379,8 +468,8 @@ export async function initTabEditor(tabId) {
         theme: "fdd-dark",
         ignoreTrimWhitespace: prefs.ignoreWhitespace,
         glyphMargin: true,
-        renderMarginRevertIcon: true,
-        renderGutterMenu: true,
+        renderMarginRevertIcon: false,
+        renderGutterMenu: false,
         diffAlgorithm: "advanced",
         minimap: { enabled: true },
         scrollBeyondLastLine: false,
